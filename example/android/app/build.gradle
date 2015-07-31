@@ -1,29 +1,75 @@
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.model.application'
 
-android {
-    compileSdkVersion 22
-    buildToolsVersion "22.0.1"
+model {
+    android {
+        compileSdkVersion = 22
+        buildToolsVersion = "22.0.1"
 
-    defaultConfig {
-        applicationId "com.dropbox.textsort"
-        minSdkVersion 15
-        targetSdkVersion 22
-        versionCode 1
-        versionName "1.0"
+        defaultConfig.with {
+            applicationId = "com.dropbox.textsort"
+            minSdkVersion.apiLevel = 15
+            targetSdkVersion.apiLevel = 22
+            versionCode = 1
+            versionName = "1.0"
+        }
     }
-    buildTypes {
+    android.buildTypes {
         release {
-            runProguard false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            isMinifyEnabled = false
+            proguardFiles += file('proguard-rules.pro')
         }
     }
-    sourceSets {
+
+    android.ndk {
+        moduleName = "textsort_jni"
+
+//        stl = "stlport_shared"
+//        stl = "stlport_static"
+        stl = "gnustl_static"
+
+        cppFlags  += "-I${file("../../../support-lib/jni")}".toString()
+        cppFlags  += "-I${file("../../generated-src/cpp")}".toString()
+        cppFlags  += "-I${file("../../handwritten-src/cpp")}".toString()
+        cppFlags  += "-std=c++11"
+
+        cppFlags   += "-Werror"
+        cppFlags   += "-frtti"
+        cppFlags   += "-fexceptions"
+    }
+
+    android.sources {
         main {
-            java.srcDirs = ['src', '../../handwritten-src/java', '../../generated-src/java']
-            jni.srcDirs = []
-            jniLibs.srcDirs = ['libs']
+            java {
+                source {
+                    srcDirs 'src',
+                            '../../handwritten-src/java',
+                            '../../generated-src/java'
+                }
+            }
+
+            jni {
+                source {
+                    srcDirs '../../handwritten-src/cpp',
+                            '../../generated-src/jni',
+                            '../../generated-src/cpp',
+                            '../../../support-lib/jni'
+                }
+            }
+
+//            jniLibs {
+//                source {
+//                    srcDirs 'libs', '../../generated-src/jni'
+//                }
+//            }
         }
     }
+//    sourceSets {
+//        main {
+//            java.srcDirs = ['src', '../../handwritten-src/java', '../../generated-src/java']
+//            jni.srcDirs = ['../../generated-src/jni']
+//            jniLibs.srcDirs = ['libs']
+//        }
+//    }
 }
 
 dependencies {
@@ -31,24 +77,24 @@ dependencies {
     compile 'com.google.code.findbugs:jsr305:3.0.0'
 }
 
-task ndkBuild(type: Exec) {
-    String MainDirectory = System.getProperty("user.dir") + '/app/'
-    File ndkDir = project.getPlugins().getPlugin('android').ndkFolder
-    if (ndkDir == null) {
-        def gradle_project_root = project.rootProject.rootDir
-        throw new GradleException("NDK is not configured. Make sure there is a local.properties " +
-                "file with an ndk.dir entry in the directory ${gradle_project_root}.")
-    }
-    def ndkBuildExecutable = new File(ndkDir, 'ndk-build')
-    if (!ndkBuildExecutable.exists()) {
-        throw new GradleException("Could not find ndk-build. The configured NDK directory ${ndkDir} may not be correct.")
-    }
-    environment("NDK_PROJECT_PATH", MainDirectory)
-    environment("GYP_CONFIGURATION", "Release")
-    commandLine ndkBuildExecutable
-}
+//task ndkBuild(type: Exec) {
+//    String MainDirectory = System.getProperty("user.dir") + '/app/'
+//    File ndkDir = project.getPlugins().getPlugin('android').ndkFolder
+//    if (ndkDir == null) {
+//        def gradle_project_root = project.rootProject.rootDir
+//        throw new GradleException("NDK is not configured. Make sure there is a local.properties " +
+//                "file with an ndk.dir entry in the directory ${gradle_project_root}.")
+//    }
+//    def ndkBuildExecutable = new File(ndkDir, 'ndk-build')
+//    if (!ndkBuildExecutable.exists()) {
+//        throw new GradleException("Could not find ndk-build. The configured NDK directory ${ndkDir} may not be correct.")
+//    }
+//    environment("NDK_PROJECT_PATH", MainDirectory)
+//    environment("GYP_CONFIGURATION", "Release")
+//    commandLine ndkBuildExecutable
+//}
 
-tasks.withType(JavaCompile) {
-    compileTask -> compileTask.dependsOn ndkBuild
-}
+//tasks.withType(JavaCompile) {
+//    compileTask -> compileTask.dependsOn ndkBuild
+//}
 
